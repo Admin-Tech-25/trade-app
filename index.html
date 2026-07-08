@@ -3,93 +3,112 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>TradeCrew App</title>
+  <title>TradeCrew Portal</title>
   <!-- Supabase CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     :root {
-      --primary: #0066ff;
-      --primary-dark: #004ce6;
-      --danger: #e63946;
-      --success: #2a9d8f;
-      --bg: #f4f6f8;
+      --primary: #0052ff;
+      --primary-hover: #0045d8;
+      --danger: #d93025;
+      --success: #188038;
+      --bg: #f4f5f7;
       --card: #ffffff;
-      --text: #1d1d1f;
-      --subtext: #6e6e73;
-      --border: #e1e4e8;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --border: #e5e7eb;
+      --radius: 8px;
     }
     
     * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     
-    body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+    body { background-color: var(--bg); color: var(--text-main); padding-bottom: 70px; }
     
     /* App Header */
-    header { background: var(--card); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
-    header h1 { font-size: 20px; font-weight: 700; color: var(--primary); }
-    #user-email { font-size: 12px; color: var(--subtext); }
-    .btn-logout { background: none; border: none; color: var(--danger); font-size: 14px; font-weight: 600; cursor: pointer; }
+    header { background: var(--card); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; }
+    .brand-title { font-size: 18px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
+    #user-email { font-size: 12px; color: var(--text-muted); display: block; }
+    .btn-logout { background: none; border: none; color: var(--text-muted); font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: underline; }
 
     /* Containers & Cards */
     .container { max-width: 600px; margin: 0 auto; padding: 16px; }
-    .card { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); }
-    h2 { font-size: 18px; margin-bottom: 12px; font-weight: 700; }
+    .card { background: var(--card); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; border: 1px solid var(--border); }
+    h2 { font-size: 16px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); margin-bottom: 16px; }
     
-    /* Buttons & Inputs (Thumb-friendly 48px+ tap targets) */
-    input, select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: #fafbfc; }
+    /* Buttons & Inputs */
+    label { font-size: 13px; font-weight: 600; color: var(--text-main); margin-bottom: 6px; display: block; }
+    input, select { width: 100%; padding: 14px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: var(--radius); font-size: 16px; background: #fafbfc; color: var(--text-main); }
     input:focus, select:focus { outline: none; border-color: var(--primary); background: white; }
     
-    .btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; display: inline-block; text-decoration: none; transition: background 0.2s; }
+    .btn { width: 100%; padding: 16px; border: none; border-radius: var(--radius); font-size: 15px; font-weight: 600; cursor: pointer; text-align: center; display: inline-block; text-decoration: none; transition: background 0.15s ease; }
     .btn-primary { background: var(--primary); color: white; }
-    .btn-primary:active { background: var(--primary-dark); }
+    .btn-primary:active { background: var(--primary-hover); }
     .btn-danger { background: var(--danger); color: white; }
     .btn-success { background: var(--success); color: white; }
-    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); margin-top: 8px; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
     
     /* Job Sheets UI */
-    .job-card { border-left: 5px solid var(--primary); }
-    .job-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-    .job-meta { font-size: 14px; color: var(--subtext); margin-bottom: 12px; display: block; }
-    .job-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    .job-card { border-left: 4px solid var(--primary); }
+    .job-client { font-size: 18px; font-weight: 700; color: var(--text-main); margin-bottom: 4px; }
+    .job-detail { font-size: 14px; color: var(--text-muted); margin-bottom: 4px; line-height: 1.4; }
+    .job-notes { font-size: 14px; background: var(--bg); padding: 12px; border-radius: 6px; margin: 12px 0; border-left: 2px solid var(--border); color: var(--text-main); }
+    .job-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
     
     /* Timesheet UI */
-    .clock-status { text-align: center; padding: 20px 0; }
-    .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
-    .status-active { background: #e8f5e9; color: #2e7d32; }
-    .status-inactive { background: #f5f5f5; color: #616161; }
-    .timer-display { font-size: 32px; font-weight: 800; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+    .clock-container { text-align: center; padding: 24px 16px; }
+    .status-indicator { display: inline-block; padding: 4px 12px; border-radius: 4px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 16px; }
+    .status-active { background: #e6f4ea; color: var(--success); }
+    .status-inactive { background: #f1f3f4; color: var(--text-muted); }
+    .timer-display { font-size: 36px; font-weight: 700; letter-spacing: -1px; margin-bottom: 24px; font-variant-numeric: tabular-nums; color: var(--text-main); }
     
-    .log-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .log-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
     .log-item:last-child { border-bottom: none; }
     
     /* Bottom Navigation */
-    nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; max-width: 600px; margin: 0 auto; z-index: 100; }
-    .nav-item { flex: 1; padding: 12px 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; border: none; background: none; }
+    nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; max-width: 600px; margin: 0 auto; z-index: 100; height: 60px; }
+    .nav-item { flex: 1; border: none; background: none; font-size: 13px; font-weight: 600; color: var(--text-muted); cursor: pointer; position: relative; transition: color 0.15s ease; }
     .nav-item.active { color: var(--primary); }
-    .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+    .nav-item.active::top { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: var(--primary); }
     
-    /* View Switching */
+    /* View Switching & Auth Tabs */
     .view-section { display: none; }
     .view-section.active { display: block; }
     
-    #auth-view { max-width: 400px; margin: 40px auto; padding: 20px; }
-    .logo-area { text-align: center; margin-bottom: 24px; }
-    .logo-area h1 { font-size: 28px; color: var(--primary); }
+    #auth-view { max-width: 400px; margin: 40px auto; padding: 16px; }
+    .auth-header { margin-bottom: 24px; text-align: left; }
+    .auth-header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
+    .auth-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    
+    .auth-tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 20px; }
+    .auth-tab { flex: 1; padding: 12px; text-align: center; background: none; border: none; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; border-bottom: 2px solid transparent; }
+    .auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
   </style>
 </head>
 <body>
 
   <!-- AUTHENTICATION VIEW -->
   <div id="auth-view">
-    <div class="logo-area">
-      <h1>⚡ TradeCrew</h1>
-      <p style="color: var(--subtext); margin-top: 4px;">Field Management Portal</p>
+    <div class="auth-header">
+      <h1>TradeCrew Portal</h1>
+      <p>Field operations and timesheet management.</p>
     </div>
+    
     <div class="card">
-      <h2 style="text-align: center; margin-bottom: 20px;">Staff Login</h2>
-      <input type="email" id="login-email" placeholder="Email Address" required>
-      <input type="password" id="login-password" placeholder="Password" required>
-      <button class="btn btn-primary" onclick="handleLogin()">Log In</button>
-      <div id="auth-error" style="color: var(--danger); font-size: 14px; margin-top: 12px; text-align: center; display: none;"></div>
+      <!-- Toggle between Login and Sign Up -->
+      <div class="auth-tabs">
+        <button class="auth-tab active" id="tab-login" onclick="switchAuthMode('login')">Sign In</button>
+        <button class="auth-tab" id="tab-signup" onclick="switchAuthMode('signup')">Create Account</button>
+      </div>
+
+      <label for="auth-email">Email Address</label>
+      <input type="email" id="auth-email" placeholder="name@company.com" required>
+      
+      <label for="auth-password">Password</label>
+      <input type="password" id="auth-password" placeholder="••••••••" required>
+      
+      <button class="btn btn-primary" id="auth-submit-btn" onclick="handleAuth()">Sign In</button>
+      
+      <div id="auth-message" style="font-size: 14px; margin-top: 16px; text-align: center; display: none; line-height: 1.4;"></div>
     </div>
   </div>
 
@@ -97,34 +116,34 @@
   <div id="app-view" style="display: none;">
     <header>
       <div>
-        <h1>⚡ TradeCrew</h1>
+        <div class="brand-title">TradeCrew</div>
         <span id="user-email"></span>
       </div>
-      <button class="btn-logout" onclick="handleLogout()">Log Out</button>
+      <button class="btn-logout" onclick="handleLogout()">Sign Out</button>
     </header>
 
     <div class="container">
       
       <!-- VIEW 1: JOBS -->
       <div id="view-jobs" class="view-section active">
-        <h2>Today's Job Sheets</h2>
+        <h2>Assigned Job Sheets</h2>
         <div id="jobs-list">
-          <div class="card" style="text-align: center; color: var(--subtext);">Loading jobs...</div>
+          <div class="card" style="text-align: center; color: var(--text-muted);">Loading schedule...</div>
         </div>
       </div>
 
-      <!-- VIEW 2: CLOCK ON / OFF -->
+      <!-- VIEW 2: TIMESHEET -->
       <div id="view-clock" class="view-section">
-        <div class="card clock-status">
-          <span id="clock-badge" class="status-badge status-inactive">Not Clocked In</span>
+        <div class="card clock-container">
+          <div id="clock-badge" class="status-indicator status-inactive">Off the Clock</div>
           <div id="timer-display" class="timer-display">00:00:00</div>
-          <button id="clock-btn" class="btn btn-success" onclick="toggleClock()">Clock On</button>
+          <button id="clock-btn" class="btn btn-success" onclick="toggleClock()">Clock In</button>
         </div>
 
         <div class="card">
-          <h2>Recent Timesheets</h2>
+          <h2>Shift History</h2>
           <div id="logs-list">
-            <p style="color: var(--subtext); font-size: 14px;">No timesheets logged yet.</p>
+            <p style="color: var(--text-muted); font-size: 14px;">No completed shifts recorded.</p>
           </div>
         </div>
       </div>
@@ -132,37 +151,34 @@
       <!-- VIEW 3: PHOTOS -->
       <div id="view-photos" class="view-section">
         <div class="card">
-          <h2>Upload Job Photo</h2>
-          <p style="color: var(--subtext); font-size: 14px; margin-bottom: 16px;">Take a photo of completed work or site issues. It will sync directly to the cloud.</p>
+          <h2>Site Documentation</h2>
+          <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 20px; line-height: 1.5;">Upload photos of completed electrical work or switchboards directly to secure cloud storage.</p>
           
+          <label for="photo-job-select">Associated Job</label>
           <select id="photo-job-select">
-            <option value="">Select Associated Job...</option>
+            <option value="">General Site Photo</option>
           </select>
 
-          <input type="file" id="photo-input" accept="image/*" capture="environment" style="background: none; border: none; padding: 0;">
-          <button class="btn btn-primary" onclick="uploadPhoto()" id="upload-btn">Upload to Cloud</button>
+          <label for="photo-input" style="margin-top: 8px;">Select Image</label>
+          <input type="file" id="photo-input" accept="image/*" capture="environment" style="background: none; border: none; padding: 0; margin-bottom: 24px;">
+          
+          <button class="btn btn-primary" onclick="uploadPhoto()" id="upload-btn">Upload to Storage</button>
         </div>
       </div>
 
     </div>
 
-    <!-- BOTTOM NAVIGATION -->
+    <!-- BOTTOM NAVIGATION (Clean Text, No Icons) -->
     <nav>
-      <button class="nav-item active" onclick="switchTab('jobs', this)">
-        <span class="nav-icon">📋</span>Jobs
-      </button>
-      <button class="nav-item" onclick="switchTab('clock', this)">
-        <span class="nav-icon">⏱️</span>Timesheet
-      </button>
-      <button class="nav-item" onclick="switchTab('photos', this)">
-        <span class="nav-icon">📸</span>Photos
-      </button>
+      <button class="nav-item active" onclick="switchTab('jobs', this)">Jobs</button>
+      <button class="nav-item" onclick="switchTab('clock', this)">Timesheet</button>
+      <button class="nav-item" onclick="switchTab('photos', this)">Photos</button>
     </nav>
   </div>
 
   <script>
     // ==========================================
-    // 1. SUPABASE CONFIGURATION (PRE-WIRED!)
+    // 1. SUPABASE CONFIGURATION (PRE-WIRED)
     // ==========================================
     const SUPABASE_URL = 'https://xmiodfdwmozhajiwpesy.supabase.co';
     const SUPABASE_ANON_KEY = 'sb_publishable_9woTvAlC2Yu8lJwGj73N2w_rvg1Nv-z';
@@ -172,6 +188,7 @@
     let currentUser = null;
     let activeTimeLog = null;
     let timerInterval = null;
+    let authMode = 'login'; // 'login' or 'signup'
 
     // Initialize App
     window.addEventListener('DOMContentLoaded', () => {
@@ -179,8 +196,80 @@
     });
 
     // ==========================================
-    // 2. AUTHENTICATION & SESSION
+    // 2. AUTHENTICATION & SELF SIGN-UP
     // ==========================================
+    function switchAuthMode(mode) {
+      authMode = mode;
+      const loginTab = document.getElementById('tab-login');
+      const signupTab = document.getElementById('tab-signup');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      const msgDiv = document.getElementById('auth-message');
+      
+      msgDiv.style.display = 'none';
+
+      if (mode === 'login') {
+        loginTab.classList.add('active');
+        signupTab.classList.remove('active');
+        submitBtn.innerText = "Sign In";
+      } else {
+        signupTab.classList.add('active');
+        loginTab.classList.remove('active');
+        submitBtn.innerText = "Create Account";
+      }
+    }
+
+    async function handleAuth() {
+      const email = document.getElementById('auth-email').value.trim();
+      const password = document.getElementById('auth-password').value;
+      const msgDiv = document.getElementById('auth-message');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      
+      if (!email || !password) {
+        showMessage("Please enter both an email address and password.", "error");
+        return;
+      }
+
+      if (password.length < 6) {
+        showMessage("Password must be at least 6 characters long.", "error");
+        return;
+      }
+
+      submitBtn.disabled = true;
+
+      if (authMode === 'login') {
+        // SIGN IN
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          showMessage(error.message, "error");
+        } else {
+          checkSession();
+        }
+      } else {
+        // CREATE ACCOUNT (SELF SIGN-UP)
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          showMessage(error.message, "error");
+        } else {
+          if (data.session) {
+            // Instant login (if email confirmation is disabled in Supabase)
+            checkSession();
+          } else {
+            // Requires email confirmation
+            showMessage("Account created! If you cannot log in immediately, please check your email to confirm your registration.", "success");
+            switchAuthMode('login');
+          }
+        }
+      }
+      submitBtn.disabled = false;
+    }
+
+    function showMessage(text, type) {
+      const msgDiv = document.getElementById('auth-message');
+      msgDiv.innerText = text;
+      msgDiv.style.color = type === 'error' ? 'var(--danger)' : 'var(--success)';
+      msgDiv.style.display = 'block';
+    }
+
     async function checkSession() {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
@@ -189,34 +278,12 @@
         document.getElementById('app-view').style.display = 'block';
         document.getElementById('user-email').innerText = currentUser.email;
         
-        // Load initial data
         loadJobs();
         checkActiveClock();
         loadTimeLogs();
       } else {
         document.getElementById('auth-view').style.display = 'block';
         document.getElementById('app-view').style.display = 'none';
-      }
-    }
-
-    async function handleLogin() {
-      const email = document.getElementById('login-email').value;
-      const password = document.getElementById('login-password').value;
-      const errorDiv = document.getElementById('auth-error');
-      
-      if(!email || !password) {
-        errorDiv.innerText = "Please enter email and password.";
-        errorDiv.style.display = 'block';
-        return;
-      }
-
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      if (error) {
-        errorDiv.innerText = error.message;
-        errorDiv.style.display = 'block';
-      } else {
-        errorDiv.style.display = 'none';
-        checkSession();
       }
     }
 
@@ -229,7 +296,7 @@
     }
 
     // ==========================================
-    // 3. JOB SHEETS & DATA LOADING
+    // 3. JOB SHEETS (Clean Typographic Layout)
     // ==========================================
     async function loadJobs() {
       const { data: jobs, error } = await supabase.from('jobs').select('*').order('job_date', { ascending: true });
@@ -242,32 +309,35 @@
       }
 
       if (!jobs || jobs.length === 0) {
-        jobsList.innerHTML = `<div class="card" style="text-align: center; color: var(--subtext);">No jobs assigned for today.</div>`;
-        jobSelect.innerHTML = `<option value="">No jobs available</option>`;
+        jobsList.innerHTML = `<div class="card" style="text-align: center; color: var(--text-muted);">No active jobs scheduled.</div>`;
+        jobSelect.innerHTML = `<option value="">General Site Photo</option>`;
         return;
       }
 
-      // Populate Job Sheets UI
-      jobsList.innerHTML = jobs.map(job => `
-        <div class="card job-card">
-          <div class="job-title">${job.client_name}</div>
-          <span class="job-meta">📅 ${job.job_date || 'Today'} &nbsp;|&nbsp; 📍 ${job.client_address}</span>
-          ${job.notes ? `<p style="font-size: 14px; background: #fafbfc; padding: 10px; border-radius: 6px; margin-bottom: 12px;">"${job.notes}"</p>` : ''}
-          
-          <div class="job-actions">
-            <a href="tel:${job.client_phone}" class="btn btn-outline" style="margin-top:0;">📞 Call Client</a>
-            <a href="https://maps.google.com/?q=${encodeURIComponent(job.client_address)}" target="_blank" class="btn btn-primary" style="margin-top:0;">🗺️ Navigate</a>
+      jobsList.innerHTML = jobs.map(job => {
+        const dateFormatted = job.job_date ? new Date(job.job_date).toLocaleDateString('en-AU', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Scheduled Today';
+        
+        return `
+          <div class="card job-card">
+            <div class="job-client">${job.client_name}</div>
+            <div class="job-detail">Date: ${dateFormatted}</div>
+            <div class="job-detail">Address: ${job.client_address}</div>
+            ${job.notes ? `<div class="job-notes">${job.notes}</div>` : ''}
+            
+            <div class="job-actions">
+              <a href="tel:${job.client_phone}" class="btn btn-outline">Call Client</a>
+              <a href="https://maps.google.com/?q=${encodeURIComponent(job.client_address)}" target="_blank" class="btn btn-primary">Get Directions</a>
+            </div>
           </div>
-        </div>
-      `).join('');
+        `;
+      }).join('');
 
-      // Populate Photo Upload Job Dropdown
-      jobSelect.innerHTML = `<option value="">Select Associated Job...</option>` + 
-        jobs.map(job => `<option value="${job.id}">${job.client_name} - ${job.client_address}</option>`).join('');
+      jobSelect.innerHTML = `<option value="">General Site Photo</option>` + 
+        jobs.map(job => `<option value="${job.id}">${job.client_name} (${job.client_address})</option>`).join('');
     }
 
     // ==========================================
-    // 4. CLOCK ON / OFF (TIMESHEETS)
+    // 4. TIMESHEET LOGIC
     // ==========================================
     async function checkActiveClock() {
       const { data, error } = await supabase
@@ -295,12 +365,11 @@
       clearInterval(timerInterval);
 
       if (isClockedIn && startTime) {
-        btn.innerText = "Clock Off";
+        btn.innerText = "Clock Out";
         btn.className = "btn btn-danger";
         badge.innerText = "Active Shift";
-        badge.className = "status-badge status-active";
+        badge.className = "status-indicator status-active";
         
-        // Start live timer
         timerInterval = setInterval(() => {
           const now = new Date();
           const diff = Math.floor((now - startTime) / 1000);
@@ -310,10 +379,10 @@
           timer.innerText = `${hrs}:${mins}:${secs}`;
         }, 1000);
       } else {
-        btn.innerText = "Clock On";
+        btn.innerText = "Clock In";
         btn.className = "btn btn-success";
-        badge.innerText = "Not Clocked In";
-        badge.className = "status-badge status-inactive";
+        badge.innerText = "Off the Clock";
+        badge.className = "status-indicator status-inactive";
         timer.innerText = "00:00:00";
       }
     }
@@ -323,7 +392,6 @@
       btn.disabled = true;
 
       if (!activeTimeLog) {
-        // Clock In
         const now = new Date().toISOString();
         const { data, error } = await supabase
           .from('time_logs')
@@ -334,10 +402,9 @@
           activeTimeLog = data[0];
           setClockUI(true, new Date(activeTimeLog.clock_in));
         } else {
-          alert("Failed to clock in: " + error.message);
+          alert("Error starting shift: " + error.message);
         }
       } else {
-        // Clock Out
         const now = new Date().toISOString();
         const { error } = await supabase
           .from('time_logs')
@@ -347,10 +414,9 @@
         if (!error) {
           activeTimeLog = null;
           setClockUI(false);
-          loadTimeLogs(); // Refresh timesheets list
-          alert("Shift ended and timesheet logged!");
+          loadTimeLogs();
         } else {
-          alert("Failed to clock out: " + error.message);
+          alert("Error ending shift: " + error.message);
         }
       }
       btn.disabled = false;
@@ -367,7 +433,7 @@
 
       const container = document.getElementById('logs-list');
       if (error || !logs || logs.length === 0) {
-        container.innerHTML = `<p style="color: var(--subtext); font-size: 14px;">No completed shifts found.</p>`;
+        container.innerHTML = `<p style="color: var(--text-muted); font-size: 14px;">No shift history available.</p>`;
         return;
       }
 
@@ -380,10 +446,10 @@
         return `
           <div class="log-item">
             <div>
-              <strong>${dateStr}</strong><br>
-              <span style="color: var(--subtext); font-size: 12px;">${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+              <strong style="color: var(--text-main); font-weight: 600;">${dateStr}</strong><br>
+              <span style="color: var(--text-muted); font-size: 13px;">${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} – ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
             </div>
-            <div style="font-weight: 700; color: var(--primary); align-self: center;">
+            <div style="font-weight: 600; color: var(--text-main);">
               ${diffHrs} hrs
             </div>
           </div>
@@ -401,41 +467,38 @@
       const file = fileInput.files[0];
 
       if (!file) {
-        alert("Please select or take a photo first.");
+        alert("Please select an image file to upload.");
         return;
       }
 
       uploadBtn.disabled = true;
-      uploadBtn.innerText = "Uploading to Cloud...";
+      uploadBtn.innerText = "Uploading...";
 
       const fileExt = file.name.split('.').pop();
       const fileName = `${currentUser.id}/${Date.now()}_job_${jobId || 'general'}.${fileExt}`;
 
-      const { data, error } = await supabase.storage
+      const { error } = await supabase.storage
         .from('job-photos')
         .upload(fileName, file);
 
       if (error) {
-        alert("Upload failed: " + error.message);
+        alert("Upload error: " + error.message);
       } else {
-        alert("Photo successfully uploaded to cloud storage!");
-        fileInput.value = ''; // Reset input
+        alert("File successfully saved to cloud storage.");
+        fileInput.value = '';
       }
 
       uploadBtn.disabled = false;
-      uploadBtn.innerText = "Upload to Cloud";
+      uploadBtn.innerText = "Upload to Storage";
     }
 
     // ==========================================
     // 6. BOTTOM TAB NAVIGATION
     // ==========================================
     function switchTab(tabId, navElement) {
-      // Hide all views
       document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-      // Show selected view
       document.getElementById(`view-${tabId}`).classList.add('active');
       
-      // Update nav active states
       document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
       navElement.classList.add('active');
     }
