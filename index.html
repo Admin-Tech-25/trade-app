@@ -46,7 +46,6 @@
     .btn-danger { background: var(--danger); color: white; }
     .btn-success { background: var(--success); color: white; }
     .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text-main); }
-    .btn-outline:active { background: #f9fafb; }
     
     /* Job Sheets UI */
     .job-card { border-left: 4px solid var(--primary); }
@@ -71,7 +70,7 @@
     .nav-item.active { color: var(--primary); }
     .nav-item.active::top { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: var(--primary); }
     
-    /* View Switching & Auth */
+    /* View Switching & Segmented Toggle Tabs */
     .view-section { display: none; }
     .view-section.active { display: block; }
     
@@ -79,6 +78,11 @@
     .auth-header { margin-bottom: 24px; text-align: left; }
     .auth-header h1 { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; color: var(--text-main); }
     .auth-header p { font-size: 14px; color: var(--text-muted); margin-top: 4px; }
+    
+    /* Segmented Control Pill Tabs */
+    .auth-tabs { display: flex; background: #f1f3f4; padding: 4px; border-radius: var(--radius); margin-bottom: 20px; }
+    .auth-tab { flex: 1; padding: 12px; text-align: center; background: transparent; border: none; border-radius: 6px; font-size: 14px; font-weight: 600; color: var(--text-muted); cursor: pointer; transition: all 0.2s ease; touch-action: manipulation; }
+    .auth-tab.active { background: white; color: var(--primary); box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
     
     .auth-message { margin-top: 16px; padding: 14px; border-radius: var(--radius); font-size: 14px; line-height: 1.4; text-align: left; display: none; }
     .msg-error { background: #fde8e8; color: var(--danger); border: 1px solid #f8b4b4; }
@@ -91,19 +95,23 @@
   <div id="auth-view">
     <div class="auth-header">
       <h1>TradeCrew Portal</h1>
-      <p>Enter your credentials to sign in or register.</p>
+      <p id="auth-subtitle">Field operations and timesheet management.</p>
     </div>
     
     <div class="card">
+      <!-- UPGRADED SEGMENTED PILL TABS (100% Mobile Responsive) -->
+      <div class="auth-tabs">
+        <button type="button" class="auth-tab active" id="tab-login" onclick="switchAuthMode('login')">Sign In</button>
+        <button type="button" class="auth-tab" id="tab-signup" onclick="switchAuthMode('signup')">Create Account</button>
+      </div>
+
       <label for="auth-email">Email Address</label>
       <input type="email" id="auth-email" placeholder="name@company.com" required>
       
       <label for="auth-password">Password</label>
       <input type="password" id="auth-password" placeholder="••••••••" required>
       
-      <!-- DEDICATED, FOOLPROOF BUTTONS -->
-      <button class="btn btn-primary" id="btn-signin" onclick="handleSignIn()">Sign In</button>
-      <button class="btn btn-outline" id="btn-signup" style="margin-top: 12px;" onclick="handleSignUp()">Create New Account</button>
+      <button type="button" class="btn btn-primary" id="auth-submit-btn" onclick="handleAuth()">Sign In</button>
       
       <div id="auth-message" class="auth-message"></div>
     </div>
@@ -185,6 +193,7 @@
     let currentUser = null;
     let activeTimeLog = null;
     let timerInterval = null;
+    let authMode = 'login'; // 'login' or 'signup'
 
     // Initialize App
     window.addEventListener('DOMContentLoaded', () => {
@@ -192,40 +201,37 @@
     });
 
     // ==========================================
-    // 2. FOOLPROOF AUTHENTICATION
+    // 2. AUTHENTICATION & TABS LOGIC
     // ==========================================
-    async function handleSignIn() {
-      const email = document.getElementById('auth-email').value.trim();
-      const password = document.getElementById('auth-password').value;
-      const btn = document.getElementById('btn-signin');
+    function switchAuthMode(mode) {
+      authMode = mode;
+      const loginTab = document.getElementById('tab-login');
+      const signupTab = document.getElementById('tab-signup');
+      const submitBtn = document.getElementById('auth-submit-btn');
+      const subtitle = document.getElementById('auth-subtitle');
       
-      if (!email || !password) {
-        showMessage("Please enter your email and password.", "error");
-        return;
-      }
+      showMessage("", "none");
 
-      btn.disabled = true;
-      btn.innerText = "Signing In...";
-
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) {
-        showMessage(error.message, "error");
-        btn.disabled = false;
-        btn.innerText = "Sign In";
+      if (mode === 'login') {
+        loginTab.classList.add('active');
+        signupTab.classList.remove('active');
+        submitBtn.innerText = "Sign In";
+        subtitle.innerText = "Field operations and timesheet management.";
       } else {
-        showMessage("", "none");
-        checkSession();
+        signupTab.classList.add('active');
+        loginTab.classList.remove('active');
+        submitBtn.innerText = "Create My Account";
+        subtitle.innerText = "Register a new staff profile to access the portal.";
       }
     }
 
-    async function handleSignUp() {
+    async function handleAuth() {
       const email = document.getElementById('auth-email').value.trim();
       const password = document.getElementById('auth-password').value;
-      const btn = document.getElementById('btn-signup');
+      const submitBtn = document.getElementById('auth-submit-btn');
       
       if (!email || !password) {
-        showMessage("Please enter an email and password to register.", "error");
+        showMessage("Please enter both an email address and password.", "error");
         return;
       }
 
@@ -234,26 +240,39 @@
         return;
       }
 
-      btn.disabled = true;
-      btn.innerText = "Creating Account...";
+      submitBtn.disabled = true;
+      submitBtn.innerText = authMode === 'login' ? "Signing In..." : "Creating Account...";
 
-      const { data, error } = await supabase.auth.signUp({ email, password });
-      
-      if (error) {
-        showMessage(error.message, "error");
-      } else {
-        if (data.session) {
-          // Logged in immediately if confirmation happens to be disabled
-          checkSession();
+      if (authMode === 'login') {
+        // SIGN IN
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          showMessage(error.message, "error");
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Sign In";
         } else {
-          // Email confirmation is required (Your preferred secure method!)
-          showMessage("✅ Account created! We have sent a verification link to " + email + ". Please check your email inbox (and spam folder) to activate your account before signing in.", "success");
-          document.getElementById('auth-password').value = ''; // Clear password field
+          showMessage("", "none");
+          checkSession();
+        }
+      } else {
+        // CREATE ACCOUNT (WITH SECURE EMAIL VERIFICATION)
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) {
+          showMessage(error.message, "error");
+          submitBtn.disabled = false;
+          submitBtn.innerText = "Create My Account";
+        } else {
+          if (data.session) {
+            checkSession();
+          } else {
+            // Confirmation required (Your secure preferred method!)
+            showMessage("✅ Account created! We have sent a secure verification link to " + email + ". Please check your email inbox (and spam folder) to activate your account before signing in.", "success");
+            document.getElementById('auth-password').value = ''; // Clear password field
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Create My Account";
+          }
         }
       }
-      
-      btn.disabled = false;
-      btn.innerText = "Create New Account";
     }
 
     function showMessage(text, type) {
