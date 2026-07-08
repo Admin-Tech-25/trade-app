@@ -1,34 +1,446 @@
-Field Crew Portal
-  
-  
-  
-
-
-
-  
-  
-    Team Login
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>TradeCrew App</title>
+  <!-- Supabase CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #0066ff;
+      --primary-dark: #004ce6;
+      --danger: #e63946;
+      --success: #2a9d8f;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --text: #1d1d1f;
+      --subtext: #6e6e73;
+      --border: #e1e4e8;
+    }
     
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; -webkit-tap-highlight-color: transparent; }
     
-    Log In
-  
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+    
+    /* App Header */
+    header { background: var(--card); padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+    header h1 { font-size: 20px; font-weight: 700; color: var(--primary); }
+    #user-email { font-size: 12px; color: var(--subtext); }
+    .btn-logout { background: none; border: none; color: var(--danger); font-size: 14px; font-weight: 600; cursor: pointer; }
 
-  
-  
+    /* Containers & Cards */
+    .container { max-width: 600px; margin: 0 auto; padding: 16px; }
+    .card { background: var(--card); border-radius: 12px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); border: 1px solid var(--border); }
+    h2 { font-size: 18px; margin-bottom: 12px; font-weight: 700; }
     
-      Logged In
+    /* Buttons & Inputs (Thumb-friendly 48px+ tap targets) */
+    input, select { width: 100%; padding: 14px; margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 16px; background: #fafbfc; }
+    input:focus, select:focus { outline: none; border-color: var(--primary); background: white; }
+    
+    .btn { width: 100%; padding: 16px; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; text-align: center; display: inline-block; text-decoration: none; transition: background 0.2s; }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:active { background: var(--primary-dark); }
+    .btn-danger { background: var(--danger); color: white; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); margin-top: 8px; }
+    
+    /* Job Sheets UI */
+    .job-card { border-left: 5px solid var(--primary); }
+    .job-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+    .job-meta { font-size: 14px; color: var(--subtext); margin-bottom: 12px; display: block; }
+    .job-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+    
+    /* Timesheet UI */
+    .clock-status { text-align: center; padding: 20px 0; }
+    .status-badge { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-bottom: 16px; }
+    .status-active { background: #e8f5e9; color: #2e7d32; }
+    .status-inactive { background: #f5f5f5; color: #616161; }
+    .timer-display { font-size: 32px; font-weight: 800; margin-bottom: 20px; font-variant-numeric: tabular-nums; }
+    
+    .log-item { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--border); font-size: 14px; }
+    .log-item:last-child { border-bottom: none; }
+    
+    /* Bottom Navigation */
+    nav { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 1px solid var(--border); display: flex; justify-content: space-around; max-width: 600px; margin: 0 auto; z-index: 100; }
+    .nav-item { flex: 1; padding: 12px 0; text-align: center; font-size: 12px; font-weight: 600; color: var(--subtext); cursor: pointer; border: none; background: none; }
+    .nav-item.active { color: var(--primary); }
+    .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+    
+    /* View Switching */
+    .view-section { display: none; }
+    .view-section.active { display: block; }
+    
+    #auth-view { max-width: 400px; margin: 40px auto; padding: 20px; }
+    .logo-area { text-align: center; margin-bottom: 24px; }
+    .logo-area h1 { font-size: 28px; color: var(--primary); }
+  </style>
+</head>
+<body>
+
+  <!-- AUTHENTICATION VIEW -->
+  <div id="auth-view">
+    <div class="logo-area">
+      <h1>⚡ TradeCrew</h1>
+      <p style="color: var(--subtext); margin-top: 4px;">Field Management Portal</p>
+    </div>
+    <div class="card">
+      <h2 style="text-align: center; margin-bottom: 20px;">Staff Login</h2>
+      <input type="email" id="login-email" placeholder="Email Address" required>
+      <input type="password" id="login-password" placeholder="Password" required>
+      <button class="btn btn-primary" onclick="handleLogin()">Log In</button>
+      <div id="auth-error" style="color: var(--danger); font-size: 14px; margin-top: 12px; text-align: center; display: none;"></div>
+    </div>
+  </div>
+
+  <!-- MAIN APP VIEW -->
+  <div id="app-view" style="display: none;">
+    <header>
+      <div>
+        <h1>⚡ TradeCrew</h1>
+        <span id="user-email"></span>
+      </div>
+      <button class="btn-logout" onclick="handleLogout()">Log Out</button>
+    </header>
+
+    <div class="container">
       
-      Clock On
-    
+      <!-- VIEW 1: JOBS -->
+      <div id="view-jobs" class="view-section active">
+        <h2>Today's Job Sheets</h2>
+        <div id="jobs-list">
+          <div class="card" style="text-align: center; color: var(--subtext);">Loading jobs...</div>
+        </div>
+      </div>
 
-    
-    
-      Today's Job Sheets
-      Loading jobs...
-    
+      <!-- VIEW 2: CLOCK ON / OFF -->
+      <div id="view-clock" class="view-section">
+        <div class="card clock-status">
+          <span id="clock-badge" class="status-badge status-inactive">Not Clocked In</span>
+          <div id="timer-display" class="timer-display">00:00:00</div>
+          <button id="clock-btn" class="btn btn-success" onclick="toggleClock()">Clock On</button>
+        </div>
 
+        <div class="card">
+          <h2>Recent Timesheets</h2>
+          <div id="logs-list">
+            <p style="color: var(--subtext); font-size: 14px;">No timesheets logged yet.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- VIEW 3: PHOTOS -->
+      <div id="view-photos" class="view-section">
+        <div class="card">
+          <h2>Upload Job Photo</h2>
+          <p style="color: var(--subtext); font-size: 14px; margin-bottom: 16px;">Take a photo of completed work or site issues. It will sync directly to the cloud.</p>
+          
+          <select id="photo-job-select">
+            <option value="">Select Associated Job...</option>
+          </select>
+
+          <input type="file" id="photo-input" accept="image/*" capture="environment" style="background: none; border: none; padding: 0;">
+          <button class="btn btn-primary" onclick="uploadPhoto()" id="upload-btn">Upload to Cloud</button>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav>
+      <button class="nav-item active" onclick="switchTab('jobs', this)">
+        <span class="nav-icon">📋</span>Jobs
+      </button>
+      <button class="nav-item" onclick="switchTab('clock', this)">
+        <span class="nav-icon">⏱️</span>Timesheet
+      </button>
+      <button class="nav-item" onclick="switchTab('photos', this)">
+        <span class="nav-icon">📸</span>Photos
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. SUPABASE CONFIGURATION
+    // ==========================================
+    const SUPABASE_URL = 'https://xmiodfdwmozhajiwpesy.supabase.co';
     
-    
-      Upload Job Photo
+    // --> PASTE YOUR SUPABASE ANON KEY BETWEEN THE QUOTES BELOW <--
+    const SUPABASE_ANON_KEY = 'PASTE_YOUR_SUPABASE_ANON_KEY_HERE';
+    // ==========================================
+
+    const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    let currentUser = null;
+    let activeTimeLog = null;
+    let timerInterval = null;
+
+    // Initialize App
+    window.addEventListener('DOMContentLoaded', () => {
+      checkSession();
+    });
+
+    // ==========================================
+    // 2. AUTHENTICATION & SESSION
+    // ==========================================
+    async function checkSession() {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        currentUser = session.user;
+        document.getElementById('auth-view').style.display = 'none';
+        document.getElementById('app-view').style.display = 'block';
+        document.getElementById('user-email').innerText = currentUser.email;
+        
+        // Load initial data
+        loadJobs();
+        checkActiveClock();
+        loadTimeLogs();
+      } else {
+        document.getElementById('auth-view').style.display = 'block';
+        document.getElementById('app-view').style.display = 'none';
+      }
+    }
+
+    async function handleLogin() {
+      const email = document.getElementById('login-email').value;
+      const password = document.getElementById('login-password').value;
+      const errorDiv = document.getElementById('auth-error');
       
-      Upload Photo
+      if(!email || !password) {
+        errorDiv.innerText = "Please enter email and password.";
+        errorDiv.style.display = 'block';
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) {
+        errorDiv.innerText = error.message;
+        errorDiv.style.display = 'block';
+      } else {
+        errorDiv.style.display = 'none';
+        checkSession();
+      }
+    }
+
+    async function handleLogout() {
+      await supabase.auth.signOut();
+      clearInterval(timerInterval);
+      currentUser = null;
+      activeTimeLog = null;
+      checkSession();
+    }
+
+    // ==========================================
+    // 3. JOB SHEETS & DATA LOADING
+    // ==========================================
+    async function loadJobs() {
+      const { data: jobs, error } = await supabase.from('jobs').select('*').order('job_date', { ascending: true });
+      const jobsList = document.getElementById('jobs-list');
+      const jobSelect = document.getElementById('photo-job-select');
+
+      if (error) {
+        jobsList.innerHTML = `<div class="card" style="color: var(--danger);">Error loading jobs: ${error.message}</div>`;
+        return;
+      }
+
+      if (!jobs || jobs.length === 0) {
+        jobsList.innerHTML = `<div class="card" style="text-align: center; color: var(--subtext);">No jobs assigned for today.</div>`;
+        jobSelect.innerHTML = `<option value="">No jobs available</option>`;
+        return;
+      }
+
+      // Populate Job Sheets UI
+      jobsList.innerHTML = jobs.map(job => `
+        <div class="card job-card">
+          <div class="job-title">${job.client_name}</div>
+          <span class="job-meta">📅 ${job.job_date || 'Today'} &nbsp;|&nbsp; 📍 ${job.client_address}</span>
+          ${job.notes ? `<p style="font-size: 14px; background: #fafbfc; padding: 10px; border-radius: 6px; margin-bottom: 12px;">"${job.notes}"</p>` : ''}
+          
+          <div class="job-actions">
+            <a href="tel:${job.client_phone}" class="btn btn-outline" style="margin-top:0;">📞 Call Client</a>
+            <a href="https://maps.google.com/?q=${encodeURIComponent(job.client_address)}" target="_blank" class="btn btn-primary" style="margin-top:0;">🗺️ Navigate</a>
+          </div>
+        </div>
+      `).join('');
+
+      // Populate Photo Upload Job Dropdown
+      jobSelect.innerHTML = `<option value="">Select Associated Job...</option>` + 
+        jobs.map(job => `<option value="${job.id}">${job.client_name} - ${job.client_address}</option>`).join('');
+    }
+
+    // ==========================================
+    // 4. CLOCK ON / OFF (TIMESHEETS)
+    // ==========================================
+    async function checkActiveClock() {
+      const { data, error } = await supabase
+        .from('time_logs')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .is('clock_out', null)
+        .order('clock_in', { ascending: false })
+        .limit(1);
+
+      if (data && data.length > 0) {
+        activeTimeLog = data[0];
+        setClockUI(true, new Date(activeTimeLog.clock_in));
+      } else {
+        activeTimeLog = null;
+        setClockUI(false);
+      }
+    }
+
+    function setClockUI(isClockedIn, startTime = null) {
+      const btn = document.getElementById('clock-btn');
+      const badge = document.getElementById('clock-badge');
+      const timer = document.getElementById('timer-display');
+
+      clearInterval(timerInterval);
+
+      if (isClockedIn && startTime) {
+        btn.innerText = "Clock Off";
+        btn.className = "btn btn-danger";
+        badge.innerText = "Active Shift";
+        badge.className = "status-badge status-active";
+        
+        // Start live timer
+        timerInterval = setInterval(() => {
+          const now = new Date();
+          const diff = Math.floor((now - startTime) / 1000);
+          const hrs = String(Math.floor(diff / 3600)).padStart(2, '0');
+          const mins = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+          const secs = String(diff % 60).padStart(2, '0');
+          timer.innerText = `${hrs}:${mins}:${secs}`;
+        }, 1000);
+      } else {
+        btn.innerText = "Clock On";
+        btn.className = "btn btn-success";
+        badge.innerText = "Not Clocked In";
+        badge.className = "status-badge status-inactive";
+        timer.innerText = "00:00:00";
+      }
+    }
+
+    async function toggleClock() {
+      const btn = document.getElementById('clock-btn');
+      btn.disabled = true;
+
+      if (!activeTimeLog) {
+        // Clock In
+        const now = new Date().toISOString();
+        const { data, error } = await supabase
+          .from('time_logs')
+          .insert([{ user_id: currentUser.id, clock_in: now }])
+          .select();
+
+        if (!error && data) {
+          activeTimeLog = data[0];
+          setClockUI(true, new Date(activeTimeLog.clock_in));
+        } else {
+          alert("Failed to clock in: " + error.message);
+        }
+      } else {
+        // Clock Out
+        const now = new Date().toISOString();
+        const { error } = await supabase
+          .from('time_logs')
+          .update({ clock_out: now })
+          .eq('id', activeTimeLog.id);
+
+        if (!error) {
+          activeTimeLog = null;
+          setClockUI(false);
+          loadTimeLogs(); // Refresh timesheets list
+          alert("Shift ended and timesheet logged!");
+        } else {
+          alert("Failed to clock out: " + error.message);
+        }
+      }
+      btn.disabled = false;
+    }
+
+    async function loadTimeLogs() {
+      const { data: logs, error } = await supabase
+        .from('time_logs')
+        .select('*')
+        .eq('user_id', currentUser.id)
+        .not('clock_out', 'is', null)
+        .order('clock_in', { ascending: false })
+        .limit(5);
+
+      const container = document.getElementById('logs-list');
+      if (error || !logs || logs.length === 0) {
+        container.innerHTML = `<p style="color: var(--subtext); font-size: 14px;">No completed shifts found.</p>`;
+        return;
+      }
+
+      container.innerHTML = logs.map(log => {
+        const start = new Date(log.clock_in);
+        const end = new Date(log.clock_out);
+        const diffHrs = ((end - start) / (1000 * 60 * 60)).toFixed(2);
+        const dateStr = start.toLocaleDateString('en-AU', { weekday: 'short', day: 'numeric', month: 'short' });
+        
+        return `
+          <div class="log-item">
+            <div>
+              <strong>${dateStr}</strong><br>
+              <span style="color: var(--subtext); font-size: 12px;">${start.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} - ${end.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+            </div>
+            <div style="font-weight: 700; color: var(--primary); align-self: center;">
+              ${diffHrs} hrs
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // ==========================================
+    // 5. PHOTO UPLOADS
+    // ==========================================
+    async function uploadPhoto() {
+      const fileInput = document.getElementById('photo-input');
+      const jobId = document.getElementById('photo-job-select').value;
+      const uploadBtn = document.getElementById('upload-btn');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        alert("Please select or take a photo first.");
+        return;
+      }
+
+      uploadBtn.disabled = true;
+      uploadBtn.innerText = "Uploading to Cloud...";
+
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${currentUser.id}/${Date.now()}_job_${jobId || 'general'}.${fileExt}`;
+
+      const { data, error } = await supabase.storage
+        .from('job-photos')
+        .upload(fileName, file);
+
+      if (error) {
+        alert("Upload failed: " + error.message);
+      } else {
+        alert("Photo successfully uploaded to cloud storage!");
+        fileInput.value = ''; // Reset input
+      }
+
+      uploadBtn.disabled = false;
+      uploadBtn.innerText = "Upload to Cloud";
+    }
+
+    // ==========================================
+    // 6. BOTTOM TAB NAVIGATION
+    // ==========================================
+    function switchTab(tabId, navElement) {
+      // Hide all views
+      document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+      // Show selected view
+      document.getElementById(`view-${tabId}`).classList.add('active');
+      
+      // Update nav active states
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      navElement.classList.add('active');
+    }
+  </script>
+</body>
+</html>
